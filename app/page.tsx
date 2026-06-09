@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Student, GradeMap, SUBJECTS } from "@/lib/types";
 import { StudentForm } from "@/components/StudentForm";
+import { SubjectManager } from "@/components/SubjectManager";
 import { SummaryCard } from "@/components/SummaryCard";
 
 let nextId = 1;
@@ -167,12 +168,13 @@ export default function Home() {
           </p>
         </div>
 
-        <StudentForm
+        <SubjectManager
           subjects={subjects}
-          onAdd={addStudent}
-          onAddSubject={addSubject}
-          onRemoveSubject={removeSubject}
+          onAdd={addSubject}
+          onRemove={removeSubject}
         />
+
+        <StudentForm subjects={subjects} onAdd={addStudent} />
 
         {students.length > 0 && (
           <div className="space-y-4">

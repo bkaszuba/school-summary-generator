@@ -5,48 +5,16 @@ import { Grade, GradeMap, Student } from "@/lib/types";
 
 const GRADES: Grade[] = ["A", "B", "C", "D"];
 
-const SUBJECT_SUGGESTIONS = [
-  "Matematyka",
-  "Język polski",
-  "Język angielski",
-  "Język niemiecki",
-  "Język francuski",
-  "Język rosyjski",
-  "Przyroda",
-  "Biologia",
-  "Chemia",
-  "Fizyka",
-  "Geografia",
-  "Historia",
-  "Wiedza o społeczeństwie",
-  "Informatyka",
-  "Technika",
-  "Plastyka",
-  "Muzyka",
-  "WF",
-  "Religia",
-  "Etyka",
-  "Edukacja dla bezpieczeństwa",
-];
-
 interface Props {
   subjects: string[];
   onAdd: (student: Omit<Student, "id" | "summary" | "loading">) => void;
-  onAddSubject: (subject: string) => void;
-  onRemoveSubject: (subject: string) => void;
 }
 
-export function StudentForm({
-  subjects,
-  onAdd,
-  onAddSubject,
-  onRemoveSubject,
-}: Props) {
+export function StudentForm({ subjects, onAdd }: Props) {
   const [name, setName] = useState("");
   const [grades, setGrades] = useState<GradeMap>(() =>
     Object.fromEntries(subjects.map((s) => [s, "B" as Grade]))
   );
-  const [newSubject, setNewSubject] = useState("");
 
   // Keep grades in sync when subjects change externally
   const syncedGrades: GradeMap = Object.fromEntries(
@@ -59,24 +27,6 @@ export function StudentForm({
     onAdd({ name: name.trim(), grades: { ...syncedGrades } });
     setName("");
     setGrades(Object.fromEntries(subjects.map((s) => [s, "B" as Grade])));
-  }
-
-  function handleAddSubject(e: React.FormEvent) {
-    e.preventDefault();
-    const trimmed = newSubject.trim();
-    if (!trimmed) return;
-    onAddSubject(trimmed);
-    setGrades((prev) => ({ ...prev, [trimmed]: "B" }));
-    setNewSubject("");
-  }
-
-  function handleRemoveSubject(subject: string) {
-    onRemoveSubject(subject);
-    setGrades((prev) => {
-      const next = { ...prev };
-      delete next[subject];
-      return next;
-    });
   }
 
   return (
@@ -124,44 +74,8 @@ export function StudentForm({
                 </button>
               ))}
             </div>
-            <button
-              type="button"
-              onClick={() => handleRemoveSubject(subject)}
-              disabled={subjects.length <= 1}
-              className="ml-auto text-gray-300 hover:text-red-400 disabled:opacity-30 text-xs shrink-0"
-              title="Usuń przedmiot"
-            >
-              ×
-            </button>
           </div>
         ))}
-      </div>
-
-      <datalist id="subject-suggestions">
-        {SUBJECT_SUGGESTIONS.filter((s) => !subjects.includes(s)).map((s) => (
-          <option key={s} value={s} />
-        ))}
-      </datalist>
-
-      <div className="flex gap-2 pt-1">
-        <input
-          type="text"
-          list="subject-suggestions"
-          value={newSubject}
-          onChange={(e) => setNewSubject(e.target.value)}
-          placeholder="Nowy przedmiot…"
-          spellCheck
-          lang="pl"
-          className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <button
-          type="button"
-          onClick={handleAddSubject}
-          disabled={!newSubject.trim()}
-          className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg px-3 py-1.5 transition-colors disabled:opacity-40 shrink-0"
-        >
-          + Dodaj przedmiot
-        </button>
       </div>
 
       <button
