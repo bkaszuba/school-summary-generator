@@ -1,14 +1,41 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Student, GradeMap } from "@/lib/types";
 import { StudentForm } from "@/components/StudentForm";
 import { SummaryCard } from "@/components/SummaryCard";
+
+const STORAGE_KEY = "students";
+
+function loadFromStorage(): Student[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    return (JSON.parse(raw) as Student[]).map((s) => ({
+      ...s,
+      loading: false,
+    }));
+  } catch {
+    return [];
+  }
+}
 
 let nextId = 1;
 
 export default function Home() {
   const [students, setStudents] = useState<Student[]>([]);
+
+  useEffect(() => {
+    const saved = loadFromStorage();
+    if (saved.length > 0) {
+      nextId = Math.max(...saved.map((s) => Number(s.id))) + 1;
+      setStudents(saved);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(students));
+  }, [students]);
   const [generatingAll, setGeneratingAll] = useState(false);
 
   function addStudent(data: Omit<Student, "id" | "summary" | "loading">) {
