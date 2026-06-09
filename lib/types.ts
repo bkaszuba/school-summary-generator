@@ -1,6 +1,6 @@
 export type Grade = "A" | "B" | "C" | "D";
 
-export const SUBJECTS = [
+export const SUBJECTS: string[] = [
   "Matematyka",
   "Język polski",
   "Przyroda",
@@ -9,11 +9,11 @@ export const SUBJECTS = [
   "Plastyka",
   "WF",
   "Muzyka",
-] as const;
+];
 
-export type Subject = (typeof SUBJECTS)[number];
+export type Subject = string;
 
-export type GradeMap = Record<Subject, Grade>;
+export type GradeMap = Record<string, Grade>;
 
 export interface Student {
   id: string;

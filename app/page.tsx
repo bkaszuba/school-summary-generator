@@ -1,42 +1,63 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
-import { Student, GradeMap } from "@/lib/types";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { Student, GradeMap, SUBJECTS } from "@/lib/types";
 import { StudentForm } from "@/components/StudentForm";
 import { SummaryCard } from "@/components/SummaryCard";
-
-const STORAGE_KEY = "students";
-
-function loadFromStorage(): Student[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    return (JSON.parse(raw) as Student[]).map((s) => ({
-      ...s,
-      loading: false,
-    }));
-  } catch {
-    return [];
-  }
-}
 
 let nextId = 1;
 
 export default function Home() {
   const [students, setStudents] = useState<Student[]>([]);
+  const [subjects, setSubjects] = useState<string[]>(SUBJECTS);
+  const initialized = useRef(false);
 
+  // Load from DB on mount
   useEffect(() => {
-    const saved = loadFromStorage();
-    if (saved.length > 0) {
-      nextId = Math.max(...saved.map((s) => Number(s.id))) + 1;
-      setStudents(saved);
-    }
+    Promise.all([
+      fetch("/api/students").then((r) => r.json()),
+      fetch("/api/subjects").then((r) => r.json()),
+    ]).then(([savedStudents, savedSubjects]: [Student[], string[]]) => {
+      if (savedStudents.length > 0) {
+        nextId = Math.max(...savedStudents.map((s) => Number(s.id))) + 1;
+        setStudents(savedStudents.map((s) => ({ ...s, loading: false })));
+      }
+      setSubjects(savedSubjects);
+      initialized.current = true;
+    });
   }, []);
 
+  // Persist students to DB whenever they change
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(students));
+    if (!initialized.current) return;
+    fetch("/api/students", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(students),
+    });
   }, [students]);
+
+  // Persist subjects to DB whenever they change
+  useEffect(() => {
+    if (!initialized.current) return;
+    fetch("/api/subjects", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(subjects),
+    });
+  }, [subjects]);
+
   const [generatingAll, setGeneratingAll] = useState(false);
+
+  function addSubject(subject: string) {
+    setSubjects((prev) =>
+      prev.includes(subject) ? prev : [...prev, subject]
+    );
+  }
+
+  function removeSubject(subject: string) {
+    setSubjects((prev) => prev.filter((s) => s !== subject));
+  }
 
   function addStudent(data: Omit<Student, "id" | "summary" | "loading">) {
     setStudents((prev) => [
@@ -146,11 +167,16 @@ export default function Home() {
           </p>
         </div>
 
-        <StudentForm onAdd={addStudent} />
+        <StudentForm
+          subjects={subjects}
+          onAdd={addStudent}
+          onAddSubject={addSubject}
+          onRemoveSubject={removeSubject}
+        />
 
         {students.length > 0 && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <p className="text-sm text-gray-600">
                 Uczniów: <strong>{students.length}</strong>
                 {withSummaries > 0 && (
@@ -159,7 +185,7 @@ export default function Home() {
                   </span>
                 )}
               </p>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {withoutSummaries > 0 && (
                   <button
                     onClick={generateAll}
